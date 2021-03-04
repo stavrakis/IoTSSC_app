@@ -30,7 +30,7 @@ def pub(request):
     print('pub called')
     if request.method == 'POST':
 
-        data = literal_eval(request)
+        data = literal_eval(request.POST)
         print(data)
         #pubsub_message = base64.b64decode(data.decode('utf-8'))
         #jsondata = json.loads(pubsub_message)

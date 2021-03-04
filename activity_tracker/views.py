@@ -33,7 +33,7 @@ def pub(request):
             print('Key: %s' % (key))
             print('Value %s' % (value))
 
-        #data = request.POST['message']
+        data = request.POST
         print(json.dumps(data))
         #pubsub_message = base64.b64decode(data.decode('utf-8'))
         #jsondata = json.loads(pubsub_message)

@@ -28,7 +28,7 @@ def viewdb(request):
 def pub(request):
     print('pub called')
     if request.method == 'POST':
-        data = request.POST.get()
+        data = request.POST.get('message')
         pubsub_message = base64.b64decode(data.decode('utf-8'))
         jsondata = json.loads(pubsub_message)
         print(pubsub_message)

@@ -29,8 +29,7 @@ def pub(request):
     print('pub called')
     if request.method == 'POST':
 
-
-        data = request.POST
+        data = request.data.decode('utf-8')
         print(data)
         #pubsub_message = base64.b64decode(data.decode('utf-8'))
         #jsondata = json.loads(pubsub_message)

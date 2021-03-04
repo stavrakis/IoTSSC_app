@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import SensorData
+from ast import literal_eval
 import base64
 import json
 
@@ -29,7 +30,7 @@ def pub(request):
     print('pub called')
     if request.method == 'POST':
 
-        data = request.POST.decode('utf-8')
+        data = literal_eval(request)
         print(data)
         #pubsub_message = base64.b64decode(data.decode('utf-8'))
         #jsondata = json.loads(pubsub_message)

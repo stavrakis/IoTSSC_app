@@ -4,8 +4,10 @@ from .models import SensorData
 from ast import literal_eval
 import base64
 import json
-
+from .predict import Prediction
 from django.views.decorators.csrf import csrf_exempt
+
+prd = Prediction()
 
 
 def index(request):
@@ -27,14 +29,14 @@ def viewdb(request):
 
 @csrf_exempt
 def pub(request):
-    print('pub called')
     if request.method == 'POST':
 
-        #data = literal_eval(request.POST)
-        print(request.keys())
-        #pubsub_message = base64.b64decode(data.decode('utf-8'))
-        #jsondata = json.loads(pubsub_message)
-        #print(pubsub_message)
+        data = json.loads(request.body)
+        sensor_data = base64.b64decode(data['message']['data']).decode('utf-8')
+        sensor_data = json.loads(sensor_data)
+        del sensor_data['time']
+        pred = prd.predict(sensor_data)
+        print(pred)
 
     return HttpResponse(status=200)
 

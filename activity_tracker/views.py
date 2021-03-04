@@ -29,5 +29,7 @@ def pub(request):
         jsondata = json.loads(pubsub_message)
         print(pubsub_message)
 
+    return HttpResponse('pub')
+
 #def getvalue(request):
 #    request =

@@ -31,7 +31,7 @@ def pub(request):
     if request.method == 'POST':
 
         data = literal_eval(request.POST)
-        print(data.keys())
+        print(request.keys())
         #pubsub_message = base64.b64decode(data.decode('utf-8'))
         #jsondata = json.loads(pubsub_message)
         #print(pubsub_message)

@@ -4,6 +4,9 @@ from .models import SensorData
 import base64
 import json
 
+from django.views.decorators.csrf import csrf_exempt
+
+
 def index(request):
     return HttpResponse("Hello, world. You're at the activity tracker index.")
 
@@ -21,6 +24,7 @@ def viewdb(request):
     return HttpResponse(out)
 
 
+@csrf_exempt
 def pub(request):
     print('pub called')
     if request.method == 'POST':
@@ -29,7 +33,7 @@ def pub(request):
         jsondata = json.loads(pubsub_message)
         print(pubsub_message)
 
-    return HttpResponse('pub')
+    return HttpResponse(status=200)
 
 #def getvalue(request):
 #    request =

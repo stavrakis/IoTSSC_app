@@ -1,13 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import SensorData
-from ast import literal_eval
+from .models import ActivityData
 import base64
 import json
 from .predict import Prediction
+from .logger import ActivityLogger
 from django.views.decorators.csrf import csrf_exempt
 
 prd = Prediction()
+devices = ActivityLogger()
 
 
 def index(request):
@@ -22,8 +23,10 @@ def viewdb(request):
     else:
         limit = 201
 
-    resp = SensorData.objects.all()[:limit]
-    out = '<br />'.join([r for r in resp])
+    resp = ActivityData.objects.all()[:limit]
+    out = 'Data <br />'
+    for r in resp:
+        out += str(r) + '<br />'
     return HttpResponse(out)
 
 
@@ -32,14 +35,11 @@ def pub(request):
     if request.method == 'POST':
 
         data = json.loads(request.body)
-        sensor_data = base64.b64decode(data['message']['data']).decode('utf-8')
-        sensor_data = json.loads(sensor_data)
-        del sensor_data['time']
+        deviceId = data['message']['attributes']['deviceId']
+        sensor_data = json.loads(base64.b64decode(data['message']['data']).decode('utf-8'))
+
         pred = prd.predict(sensor_data)
-        print(pred)
+        print(deviceId + " : " + str(pred))
+        devices.log(deviceId, pred, int(sensor_data['date']))
 
     return HttpResponse(status=200)
-
-
-#def getvalue(request):
-#    request =

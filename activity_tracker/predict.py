@@ -1,6 +1,7 @@
 import pickle
 import pandas as pd
 
+
 class Prediction:
 
     cols = []

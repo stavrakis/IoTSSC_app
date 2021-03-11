@@ -12,3 +12,14 @@ class ActivityData(models.Model):
     def __str__(self):
         out = "(uid={}, activity={}, time_start={}, time_end={})".format(self.uid, self.activity, self.time_start, self.time_end)
         return out
+
+
+class User(models.Model):
+    userName = models.TextField()
+    password = models.TextField()
+    devID = models.TextField()
+
+
+class Login(models.Model):
+    userID = models.TextField()
+    token = models.TextField()

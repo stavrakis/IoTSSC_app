@@ -1,10 +1,12 @@
-from django.shortcuts import render
+import datetime
+
 from django.http import HttpResponse
-from .models import ActivityData
+from .models import ActivityData, User
 import base64
 import json
 from .predict import Prediction
 from .logger import ActivityLogger
+from .user_auth import user_login, user_register, get_user
 from django.views.decorators.csrf import csrf_exempt
 
 prd = Prediction()
@@ -43,3 +45,54 @@ def pub(request):
         devices.log(deviceId, pred, int(sensor_data['date']))
 
     return HttpResponse(status=200)
+
+
+def get_now(request):
+    reply = {'status': '0'}
+    if 'token' not in request.GET:
+        return HttpResponse(json.dumps(reply))
+    user = get_user(request.GET['token'])
+    if user is False:
+        return HttpResponse(json.dumps(reply))
+
+    device_id = User.objects.filter(userName=user).get().devID
+    activity_now = ActivityData.objects.filter(uid=device_id, time_end__gte=(datetime.datetime.now() - datetime.timedelta(seconds=10)))
+    if activity_now.count() == 0:
+        reply['status'] = 1
+        reply['activity'] = 'none'
+        return HttpResponse(json.dumps(reply))
+    else:
+        reply['status'] = 1
+        reply['activity'] = activity_now.get().activity
+        return HttpResponse(json.dumps(reply))
+
+
+def login(request):
+    if 'user' not in request.GET or 'pass' not in request.GET:
+        return HttpResponse(status=403)
+
+    user = request.GET['user']
+    password = request.GET['pass']
+    user_token = user_login(user, password)
+    reply = {}
+    if user_token is None:
+        reply['status'] = 0
+        return HttpResponse(json.dumps(reply))
+    else:
+        reply['status'] = 1
+        reply['token'] = user_token
+        return HttpResponse(json.dumps(reply))
+
+
+def register(request):
+    reply = {'status': 0}
+    if not all(key in request.GET for key in ['user', 'pass', 'device']):
+        reply['message'] = 'One or more fields not specified'
+        return HttpResponse(json.dumps(reply))
+
+    if user_register(request.GET['user'], request.GET['pass'], request.GET['device']) is True:
+        reply['user'] = request.GET['user']
+        reply['status'] = 1
+
+    reply['message'] = 'Could not register'
+    return HttpResponse(json.dumps(reply))

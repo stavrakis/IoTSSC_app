@@ -25,7 +25,8 @@ SECRET_KEY = 'n6xb^wb2!*3jv!)*h9p36_n8v93(1g!6@spqe999@+u$y^zvp)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['artas.dynu.net']
+ALLOWED_HOSTS = ['artas.dynu.net',
+                 '127.0.0.1']
 
 
 # Application definition

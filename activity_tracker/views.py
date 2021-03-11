@@ -1,5 +1,6 @@
 import datetime
 
+import pytz
 from django.http import HttpResponse
 from .models import ActivityData, User
 import base64
@@ -56,7 +57,7 @@ def get_now(request):
         return HttpResponse(json.dumps(reply))
 
     device_id = User.objects.filter(userName=user).get().devID
-    activity_now = ActivityData.objects.filter(uid=device_id, time_end__gte=(datetime.datetime.now() - datetime.timedelta(seconds=10)))
+    activity_now = ActivityData.objects.filter(uid=device_id, time_end__gte=(datetime.datetime.now(tz=pytz.UTC) - datetime.timedelta(seconds=11)))
     if activity_now.count() == 0:
         reply['status'] = 1
         reply['activity'] = 'none'
@@ -93,6 +94,7 @@ def register(request):
     if user_register(request.GET['user'], request.GET['pass'], request.GET['device']) is True:
         reply['user'] = request.GET['user']
         reply['status'] = 1
+        return HttpResponse(json.dumps(reply))
 
     reply['message'] = 'Could not register'
     return HttpResponse(json.dumps(reply))

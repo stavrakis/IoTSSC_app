@@ -14,6 +14,13 @@ class ActivityData(models.Model):
         return out
 
 
+class Milestone(models.Model):
+    user = models.TextField()
+    type = models.IntegerField()
+    date = models.DateField()
+    data = models.TimeField()
+
+
 class User(models.Model):
     userName = models.TextField()
     password = models.TextField()

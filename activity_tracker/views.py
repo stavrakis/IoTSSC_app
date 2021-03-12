@@ -6,7 +6,7 @@ from .models import ActivityData, User
 import base64
 import json
 from .predict import Prediction
-from .logger import ActivityLogger
+from .logger import ActivityLogger, process_milestones
 from .user_auth import user_login, user_register, get_user
 from django.views.decorators.csrf import csrf_exempt
 
@@ -68,6 +68,13 @@ def get_now(request):
         return HttpResponse(json.dumps(reply))
 
 
+def get_history(request):
+    if 'start_date' in request.GET:
+        start_date = request.GET['start_date']
+    if 'end_date' in request.GET:
+        end_date = request.GET['end_date']
+
+
 def login(request):
     if 'user' not in request.GET or 'pass' not in request.GET:
         return HttpResponse(status=403)
@@ -98,3 +105,9 @@ def register(request):
 
     reply['message'] = 'Could not register'
     return HttpResponse(json.dumps(reply))
+
+
+def proc_mil(request):
+    user = User.objects.filter(userName=request.GET['user']).get()
+    process_milestones(user)
+    return HttpResponse(status=200)

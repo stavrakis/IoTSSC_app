@@ -1,9 +1,70 @@
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 import pytz
 from statistics import mode, StatisticsError
 import numpy as np
-from .models import ActivityData
-from django.db.models import Max
+from .models import ActivityData, User, Milestone
+from django.db.models import Max, Q
+
+
+def update_activity_db(device_id, activity, time_start, time_end):
+    if len(ActivityData.objects.filter(uid=device_id)) == 0:
+        ActivityData(uid=device_id, activity=activity, time_start=time_start, time_end=time_end).save()
+    else:
+        last_act = ActivityData.objects.get(uid=device_id, time_end=ActivityData.objects.filter(uid=device_id).aggregate(Max('time_end'))['time_end__max'])
+        if last_act.activity == activity and (time_start - last_act.time_end).total_seconds() < 10:
+            last_act.time_end = time_end
+            last_act.save()
+        else:
+            ActivityData(uid=device_id, activity=activity, time_start=time_start, time_end=time_end).save()
+
+    user = User.objects.filter(devID=device_id).get()
+    process_milestones(user)
+
+
+def process_milestones(user):
+    thisdate = date.today()
+    daily_activities = ActivityData.objects.filter(uid=user.devID)
+    #print('daily1 ' + str(daily_activities.count()))
+    daily_activities = daily_activities.filter(Q(time_start__year=thisdate.year, time_start__month=thisdate.month, time_start__day=thisdate.day)
+                                               |Q(time_end__year=thisdate.year, time_end__month=thisdate.month, time_end__day=thisdate.day))
+    time_sum_walk = timedelta(seconds=0)
+    time_sum_run = timedelta(seconds=0)
+    #print("daily activities: " + str(daily_activities.count()))
+    for item in daily_activities:
+        if item.time_start.date() < thisdate:
+            timestart = thisdate
+        else:
+            timestart = item.time_start
+        if item.time_end.date() > thisdate:
+            timeend = datetime.combine(date=thisdate, time=time(23, 59, 59, tzinfo=pytz.UTC))
+        else:
+            timeend = item.time_end
+        #print('start: ' + str(timestart) + ' end: ' + str(timeend))
+        if item.activity == 0:
+            time_sum_walk += timeend - timestart
+        elif item.activity == 1:
+            time_sum_run += timeend - timestart
+
+    print('Processed daily milestones for user ' + user.userName + '  run: ' + str(time_sum_run) + ' walk: ' + str(time_sum_walk))
+    if time_sum_run > timedelta(minutes=1):
+        print('Milestone: running for more than 1 minute')
+        run_milestone = Milestone.objects.filter(user=user.userName, type=3, date=thisdate)
+        if run_milestone.count() == 0:
+            new_daily_run_milestone = Milestone(user=user.userName, type=3, date=thisdate, data=str(time_sum_run)).save()
+        else:
+            run_milestone = run_milestone.get()
+            run_milestone.data = str(time_sum_run)
+            run_milestone.save()
+
+    if time_sum_walk > timedelta(minutes=1):
+        print('Milestone: walking for more than 1 minute')
+        walk_milestone = Milestone.objects.filter(user=user.userName, type=2, date=thisdate)
+        if walk_milestone.count() == 0:
+            new_daily_walk_milestone = Milestone(user=user.userName, type=2, date=thisdate, data=str(time_sum_walk)).save()
+        else:
+            walk_milestone = walk_milestone.get()
+            walk_milestone.data = str(time_sum_walk)
+            walk_milestone.save()
 
 
 class ActivityLogger:
@@ -40,15 +101,4 @@ class ActivityLogger:
 
         self.deviceData[device_id]['data'] = []
         print('Activity logged for ' + device_id + ' : ' + str(act) + ' between ' + str(time_start) + ' - ' + str(time_end))
-        self.update_activity_db(device_id=device_id, activity=act, time_start=time_start, time_end=time_end)
-
-    def update_activity_db(self, device_id, activity, time_start, time_end):
-        if len(ActivityData.objects.filter(uid=device_id)) == 0:
-            ActivityData(uid=device_id, activity=activity, time_start=time_start, time_end=time_end).save()
-        else:
-            last_act = ActivityData.objects.get(uid=device_id, time_end=ActivityData.objects.filter(uid=device_id).aggregate(Max('time_end'))['time_end__max'])
-            if last_act.activity == activity and (time_start - last_act.time_end).total_seconds() < 10:
-                last_act.time_end = time_end
-                last_act.save()
-            else:
-                ActivityData(uid=device_id, activity=activity, time_start=time_start, time_end=time_end).save()
+        update_activity_db(device_id=device_id, activity=act, time_start=time_start, time_end=time_end)

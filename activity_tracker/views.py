@@ -2,7 +2,7 @@ import datetime
 
 import pytz
 from django.http import HttpResponse
-from .models import ActivityData, User
+from .models import ActivityData, User, Login
 import base64
 import json
 from .predict import Prediction
@@ -21,10 +21,10 @@ def index(request):
 def viewdb(request):
     limit = 0
     limit_arg = request.GET.get('last')
-    if limit_arg and limit_arg < 5000:
-        limit = limit_arg + 1
+    if limit_arg is not None and int(limit_arg) < 5000:
+        limit = int(limit_arg)
     else:
-        limit = 201
+        limit = 20
 
     resp = ActivityData.objects.all()[:limit]
     out = 'Data <br />'
@@ -57,7 +57,7 @@ def get_now(request):
         return HttpResponse(json.dumps(reply))
 
     device_id = User.objects.filter(userName=user).get().devID
-    activity_now = ActivityData.objects.filter(uid=device_id, time_end__gte=(datetime.datetime.now(tz=pytz.UTC) - datetime.timedelta(seconds=11)))
+    activity_now = ActivityData.objects.filter(uid=device_id, time_end__gte=(datetime.datetime.now(tz=pytz.UTC) - datetime.timedelta(seconds=12)))
     if activity_now.count() == 0:
         reply['status'] = 1
         reply['activity'] = 'none'
@@ -74,13 +74,20 @@ def get_history(request):
     if 'end_date' in request.GET:
         end_date = request.GET['end_date']
 
-
+@csrf_exempt
 def login(request):
-    if 'user' not in request.GET or 'pass' not in request.GET:
-        return HttpResponse(status=403)
+    #if 'user' not in request.GET or 'pass' not in request.GET:
+    #    return HttpResponse(status=403)
 
-    user = request.GET['user']
-    password = request.GET['pass']
+    if 'user' in request.GET and 'pass' in request.GET:
+        user = request.GET['user']
+        password = request.GET['pass']
+    else:
+        data = json.loads(request.body)
+        user = data['username']
+        password = data['password']
+        #print(user + " " + password)
+
     user_token = user_login(user, password)
     reply = {}
     if user_token is None:
@@ -89,6 +96,22 @@ def login(request):
     else:
         reply['status'] = 1
         reply['token'] = user_token
+        return HttpResponse(json.dumps(reply))
+
+
+@csrf_exempt
+def check_token(request):
+    data = json.loads(request.body)
+    user = data['username']
+    token = data['token']
+
+    user = Login.objects.get(userID=user, token=token)
+    reply = {}
+    if user is None:
+        reply['status'] = 0
+        return HttpResponse(json.dumps(reply))
+    else:
+        reply['status'] = 1
         return HttpResponse(json.dumps(reply))
 
 

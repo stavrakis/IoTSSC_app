@@ -2,7 +2,9 @@ from datetime import datetime, date, time, timedelta
 import pytz
 from statistics import mode, StatisticsError
 import numpy as np
-from .models import ActivityData, User, Milestone
+import requests
+
+from .models import ActivityData, User, Milestone, Login
 from django.db.models import Max, Q
 
 
@@ -45,22 +47,22 @@ def process_milestones(user):
         elif item.activity == 1:
             time_sum_run += timeend - timestart
 
-    print('Processed daily milestones for user ' + user.userName + '  run: ' + str(time_sum_run) + ' walk: ' + str(time_sum_walk))
+    print('Processing daily milestones for user ' + user.userName + '  run: ' + str(time_sum_run) + ' walk: ' + str(time_sum_walk))
     if time_sum_run > timedelta(minutes=1):
-        print('Milestone: running for more than 1 minute')
         run_milestone = Milestone.objects.filter(user=user.userName, type=3, date=thisdate)
         if run_milestone.count() == 0:
             new_daily_run_milestone = Milestone(user=user.userName, type=3, date=thisdate, data=str(time_sum_run)).save()
+            notify(user, "Daily goal achieved!", "Running")
         else:
             run_milestone = run_milestone.get()
             run_milestone.data = str(time_sum_run)
             run_milestone.save()
 
     if time_sum_walk > timedelta(minutes=1):
-        print('Milestone: walking for more than 1 minute')
         walk_milestone = Milestone.objects.filter(user=user.userName, type=2, date=thisdate)
         if walk_milestone.count() == 0:
             new_daily_walk_milestone = Milestone(user=user.userName, type=2, date=thisdate, data=str(time_sum_walk)).save()
+            notify(user, "Daily goal achieved!", "Walking")
         else:
             walk_milestone = walk_milestone.get()
             walk_milestone.data = str(time_sum_walk)
@@ -102,3 +104,20 @@ class ActivityLogger:
         self.deviceData[device_id]['data'] = []
         print('Activity logged for ' + device_id + ' : ' + str(act) + ' between ' + str(time_start) + ' - ' + str(time_end))
         update_activity_db(device_id=device_id, activity=act, time_start=time_start, time_end=time_end)
+
+
+def notify(user, title, body):
+    device_login = Login.objects.get(userID=user.userName)
+    post_data = {
+        'to': device_login.fireBaseToken,
+        'notification': {
+            'title': title,
+            'body': body
+        }
+
+    }
+    headers = {
+        'Authorization': 'key=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q',
+        'Content-Type': 'application/json'
+    }
+    response = requests.post('https://fcm.googleapis.com/fcm/send', json=post_data, headers=headers)

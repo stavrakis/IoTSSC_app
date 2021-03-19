@@ -11,7 +11,7 @@ def user_login(user, password):
     user = user.get()
 
     if pbkdf2_sha512.verify(user.devID + password, user.password):
-        Login.objects.filter(userID=user).delete()
+        Login.objects.filter(userID=user.userName).delete()
         token = genword(entropy=52, length=64)
         new_login = Login(userID=user.userName, token=token).save()
         return token

@@ -1,6 +1,7 @@
 import datetime
 
 import pytz
+import requests
 from django.http import HttpResponse
 from .models import ActivityData, User, Login
 import base64
@@ -68,11 +69,27 @@ def get_now(request):
         return HttpResponse(json.dumps(reply))
 
 
+@csrf_exempt
 def get_history(request):
-    if 'start_date' in request.GET:
-        start_date = request.GET['start_date']
-    if 'end_date' in request.GET:
-        end_date = request.GET['end_date']
+    req = json.loads(request.body)
+    if 'start_date' in req:
+        start_date = req['start_date']
+    else:
+        start_date = datetime.datetime.now(tz=pytz.UTC) - datetime.timedelta(days=7)
+    if 'end_date' in req:
+        end_date = req['end_date']
+    else:
+        end_date = datetime.datetime.now(tz=pytz.UTC)
+
+    user = get_user(req['token'])
+    device = User.objects.get(userName=user).devID
+    data = ActivityData.objects.filter(uid=device, time_start__gte=start_date, time_end__lte=end_date)
+
+    datar = [i.json() for i in data]
+    reply = json.dumps(datar[::-1])
+    #print(reply)
+    return HttpResponse("{ 'data': " + reply + "}")
+
 
 @csrf_exempt
 def login(request):
@@ -105,12 +122,33 @@ def check_token(request):
     user = data['username']
     token = data['token']
 
-    user = Login.objects.get(userID=user, token=token)
+    user = Login.objects.filter(userID=user, token=token)
     reply = {}
-    if user is None:
+    if user.count() == 0:
         reply['status'] = 0
         return HttpResponse(json.dumps(reply))
     else:
+        reply['status'] = 1
+        print(json.dumps(reply))
+        return HttpResponse(json.dumps(reply))
+
+
+@csrf_exempt
+def update_fb_token(request):
+    data = json.loads(request.body)
+    user = data['username']
+    token = data['token']
+    fb_token = data['fb_token']
+
+    user = Login.objects.filter(userID=user, token=token)
+    reply = {}
+    if user.count() == 0:
+        reply['status'] = 0
+        return HttpResponse(json.dumps(reply))
+    else:
+        user = user.get()
+        user.fireBaseToken = data['fb_token']
+        user.save()
         reply['status'] = 1
         return HttpResponse(json.dumps(reply))
 
@@ -134,3 +172,25 @@ def proc_mil(request):
     user = User.objects.filter(userName=request.GET['user']).get()
     process_milestones(user)
     return HttpResponse(status=200)
+
+
+#DEBUG - REMOVE THIS
+def notify(request):
+    post_data = {
+        'to' : 'cY8HCG38RfqzW0QntfbJX-:APA91bEizMff1H8cx2d0tykEso30cLe-0zod29y4QlxiqrqUnHooiu0MUUJQIGCHdUyFxS3kzRNm3ij-OOQxjkOwKDOYwn__vX60pI100fAXIzMjRybR_0vY3B_Qh6zWHLymM_EncSfL',
+        'notification': {
+            'title': "TITLE",
+            'body': 'HELLO'
+            }
+
+    }
+    headers = {
+        'Authorization': 'key=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q',
+        'Content-Type': 'application/json'
+    }
+    #response = requests.post('https://fcm.googleapis.com/v1/projects/tidy-bindery-303917/messages:send?auth=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q', data=post_data)
+    response = requests.post('https://fcm.googleapis.com/fcm/send', json=post_data, headers=headers)
+    print(str(post_data))
+    print(str(headers))
+    print(response)
+    return HttpResponse(str(response.reason))

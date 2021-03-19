@@ -13,6 +13,14 @@ class ActivityData(models.Model):
         out = "(uid={}, activity={}, time_start={}, time_end={})".format(self.uid, self.activity, self.time_start, self.time_end)
         return out
 
+    def json(self):
+        return {
+            'deviceID': str(self.uid),
+            'activity': int(self.activity),
+            'time_start': str(self.time_start),
+            'time_end': str(self.time_end)
+        }
+
 
 class Milestone(models.Model):
     user = models.TextField()
@@ -30,3 +38,4 @@ class User(models.Model):
 class Login(models.Model):
     userID = models.TextField()
     token = models.TextField()
+    fireBaseToken = models.TextField()

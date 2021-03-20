@@ -38,6 +38,11 @@ def viewdb(request):
 def pub(request):
     if request.method == 'POST':
 
+        jwt_token = request.META['HTTP_AUTHORIZATION'].split(' ')[1]
+        jwt_verify = requests.get('https://oauth2.googleapis.com/tokeninfo?id_token=' + jwt_token)
+        if jwt_verify.reason != 'OK':
+            return HttpResponse(status=403)
+
         data = json.loads(request.body)
         deviceId = data['message']['attributes']['deviceId']
         sensor_data = json.loads(base64.b64decode(data['message']['data']).decode('utf-8'))

@@ -24,7 +24,7 @@ def update_activity_db(device_id, activity, time_start, time_end):
 
 
 def process_milestones(user):
-    thisdate = date.today()
+    thisdate = datetime(year=date.today().year, month=date.today().month, day=date.today().day, hour=0, minute=0, second=0, tzinfo=pytz.UTC)
     daily_activities = ActivityData.objects.filter(uid=user.devID)
     #print('daily1 ' + str(daily_activities.count()))
     daily_activities = daily_activities.filter(Q(time_start__year=thisdate.year, time_start__month=thisdate.month, time_start__day=thisdate.day)
@@ -33,11 +33,11 @@ def process_milestones(user):
     time_sum_run = timedelta(seconds=0)
     #print("daily activities: " + str(daily_activities.count()))
     for item in daily_activities:
-        if item.time_start.date() < thisdate:
+        if item.time_start < thisdate:
             timestart = thisdate
         else:
             timestart = item.time_start
-        if item.time_end.date() > thisdate:
+        if item.time_end > datetime.combine(date=thisdate, time=time(23, 59, 59, tzinfo=pytz.UTC)):
             timeend = datetime.combine(date=thisdate, time=time(23, 59, 59, tzinfo=pytz.UTC))
         else:
             timeend = item.time_end

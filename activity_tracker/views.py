@@ -177,25 +177,3 @@ def proc_mil(request):
     user = User.objects.filter(userName=request.GET['user']).get()
     process_milestones(user)
     return HttpResponse(status=200)
-
-
-#DEBUG - REMOVE THIS
-def notify(request):
-    post_data = {
-        'to' : 'cY8HCG38RfqzW0QntfbJX-:APA91bEizMff1H8cx2d0tykEso30cLe-0zod29y4QlxiqrqUnHooiu0MUUJQIGCHdUyFxS3kzRNm3ij-OOQxjkOwKDOYwn__vX60pI100fAXIzMjRybR_0vY3B_Qh6zWHLymM_EncSfL',
-        'notification': {
-            'title': "TITLE",
-            'body': 'HELLO'
-            }
-
-    }
-    headers = {
-        'Authorization': 'key=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q',
-        'Content-Type': 'application/json'
-    }
-    #response = requests.post('https://fcm.googleapis.com/v1/projects/tidy-bindery-303917/messages:send?auth=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q', data=post_data)
-    response = requests.post('https://fcm.googleapis.com/fcm/send', json=post_data, headers=headers)
-    print(str(post_data))
-    print(str(headers))
-    print(response)
-    return HttpResponse(str(response.reason))

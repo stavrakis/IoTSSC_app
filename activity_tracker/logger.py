@@ -117,7 +117,7 @@ def notify(user, title, body):
 
     }
     headers = {
-        'Authorization': 'key=AAAAB_RrceE:APA91bG19E-0-EAz6ebATOVVR_jZvRY0R4RPMcTx6fmG_zIq8obldCgVWaiIHNyUppU-QiDSdTW_TV1KkBwGp3IWjI7VEETxUTVCGvvVeMDoMIvgO9VZs7-jTjY5qcGgfXQYVZ6ccj9q',
+        'Authorization': '<firebase project deleted>',
         'Content-Type': 'application/json'
     }
     response = requests.post('https://fcm.googleapis.com/fcm/send', json=post_data, headers=headers)
